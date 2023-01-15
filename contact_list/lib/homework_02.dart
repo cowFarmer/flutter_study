@@ -28,17 +28,18 @@ class MyApp extends StatelessWidget {
               Image(image: AssetImage('assets/1700527_1.jpg'), width: 150, height: 150,),
               Expanded(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(3.0),
+                    padding: EdgeInsets.fromLTRB(10, 3, 3, 3),
                     child: Text('캐논 카메라 팝니다.', style: TextStyle(fontSize: 20)),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(3.0),
+                    padding: EdgeInsets.fromLTRB(10, 3, 3, 3),
                     child: Text('성수동 끌올 10분 전', style: TextStyle(fontWeight: FontWeight.w300, fontSize: 15, color: Colors.grey),),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(3.0),
+                    padding: EdgeInsets.fromLTRB(10, 3, 3, 3),
                     child: Text('300,000원', style: TextStyle(fontSize: 17),),
                   ),
                   Row(
