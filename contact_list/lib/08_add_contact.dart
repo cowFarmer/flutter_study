@@ -5,7 +5,7 @@ import 'package:contacts_service/contacts_service.dart';
 void main() {
   runApp(
       MaterialApp(
-        home: MyApp()
+          home: MyApp()
       )
   );
 }
