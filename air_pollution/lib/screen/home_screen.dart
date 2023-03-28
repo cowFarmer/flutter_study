@@ -1,3 +1,10 @@
+import 'package:air_pollution/component/card_title.dart';
+import 'package:air_pollution/component/category_card.dart';
+import 'package:air_pollution/component/hourly_card.dart';
+import 'package:air_pollution/component/main_app_bar.dart';
+import 'package:air_pollution/component/main_card.dart';
+import 'package:air_pollution/component/main_drawer.dart';
+import 'package:air_pollution/screen/const/colors.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -5,9 +12,24 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('home screen'),
+    return Scaffold(
+      backgroundColor: primaryColor,
+      // hamberger bar
+      drawer: MainDrawer(),
+      body: CustomScrollView(
+        slivers: [
+          MainAppBar(),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CategoryCard(),
+                const SizedBox(height: 16.0),
+                HourlyCard(),
+              ],
+            ),
+          )
+        ],
       ),
     );
   }
