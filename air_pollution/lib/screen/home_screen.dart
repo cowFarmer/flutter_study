@@ -8,6 +8,7 @@ import 'package:air_pollution/model/stat_model.dart';
 import 'package:air_pollution/repository/stat_repository.dart';
 import 'package:air_pollution/screen/const/colors.dart';
 import 'package:air_pollution/screen/const/data.dart';
+import 'package:air_pollution/screen/const/status_level.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -19,17 +20,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    fetchData();
-  }
-
-  fetchData() async {
+  Future<List<StatModel>> fetchData() async {
     final statModels = await StatRepository.fetchData();
 
-    print(statModels);
+    return statModels;
   }
 
   @override
@@ -38,20 +32,47 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: primaryColor,
       // hamberger bar
       drawer: MainDrawer(),
-      body: CustomScrollView(
-        slivers: [
-          MainAppBar(),
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CategoryCard(),
-                const SizedBox(height: 16.0),
-                HourlyCard(),
-              ],
-            ),
-          )
-        ],
+      body: FutureBuilder<List<StatModel>>(
+        future: fetchData(),
+        builder: (context, snapshat) {
+          if (snapshat.hasError) {
+            return Center(
+              child: Text('에러가 있습니다.'),
+            );
+          }
+
+          if (!snapshat.hasData) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          List<StatModel> stats = snapshat.data!;
+          StatModel recentStat = stats[0];
+
+          final status = statusLevel.where(
+            (element) => element.minFineDust < recentStat.seoul,
+          ).last;
+
+          return CustomScrollView(
+            slivers: [
+              MainAppBar(
+                stat: recentStat,
+                status: status,
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CategoryCard(),
+                    const SizedBox(height: 16.0),
+                    HourlyCard(),
+                  ],
+                ),
+              )
+            ],
+          );
+        },
       ),
     );
   }
