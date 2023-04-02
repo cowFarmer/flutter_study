@@ -8,7 +8,9 @@ import 'package:air_pollution/model/stat_model.dart';
 import 'package:air_pollution/repository/stat_repository.dart';
 import 'package:air_pollution/screen/const/colors.dart';
 import 'package:air_pollution/screen/const/data.dart';
+import 'package:air_pollution/screen/const/regions.dart';
 import 'package:air_pollution/screen/const/status_level.dart';
+import 'package:air_pollution/utils/data_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -20,10 +22,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<List<StatModel>> fetchData() async {
-    final statModels = await StatRepository.fetchData();
+  String region = regions[0];
 
-    return statModels;
+  Future<Map<ItemCode, List<StatModel>>> fetchData() async {
+    Map<ItemCode, List<StatModel>> stats = {};
+
+    for (ItemCode itemCode in ItemCode.values) {
+      final statModels = await StatRepository.fetchData(
+        itemCode: itemCode,
+      );
+
+      // stats[ItemCode.PM10]
+      stats.addAll({
+        itemCode: statModels,
+      });
+    }
+    return stats;
   }
 
   @override
@@ -31,8 +45,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: primaryColor,
       // hamberger bar
-      drawer: MainDrawer(),
-      body: FutureBuilder<List<StatModel>>(
+      drawer: MainDrawer(
+        selectedRegion: region,
+        onRegionTap: (String region) {
+          setState(() {
+            this.region = region;
+          });
+          Navigator.of(context).pop();
+        },
+      ),
+      body: FutureBuilder<Map<ItemCode, List<StatModel>>>(
         future: fetchData(),
         builder: (context, snapshat) {
           if (snapshat.hasError) {
@@ -47,17 +69,19 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          List<StatModel> stats = snapshat.data!;
-          StatModel recentStat = stats[0];
+          Map<ItemCode, List<StatModel>> stats = snapshat.data!;
+          StatModel pM10recentStat = stats[ItemCode.PM10]![0];
 
-          final status = statusLevel.where(
-            (element) => element.minFineDust < recentStat.seoul,
-          ).last;
+          final status = DataUtils.getStatusFromItemCodeAndValue(
+            value: pM10recentStat.seoul,
+            itemCode: ItemCode.PM10,
+          );
 
           return CustomScrollView(
             slivers: [
               MainAppBar(
-                stat: recentStat,
+                region: region,
+                stat: pM10recentStat,
                 status: status,
               ),
               SliverToBoxAdapter(

@@ -1,13 +1,20 @@
 import 'package:air_pollution/model/stat_model.dart';
 import 'package:air_pollution/model/status_model.dart';
+import 'package:air_pollution/utils/data_utils.dart';
 import 'package:flutter/material.dart';
 import '../screen/const/colors.dart';
 
 class MainAppBar extends StatelessWidget {
+  final String region;
   final StatusModel status;
   final StatModel stat;
 
-  const MainAppBar({required this.status, required this.stat, Key? key,}) : super(key: key);
+  const MainAppBar({
+    required this.region,
+    required this.status,
+    required this.stat,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,25 +33,29 @@ class MainAppBar extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  '서울',
+                  region,
                   style: ts.copyWith(
                     fontSize: 40.0,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
-                  getTimeFromDateTime(dateTime: stat.dataTime),
+                  DataUtils.getTimeFromDateTime(dateTime: stat.dataTime),
                   style: ts.copyWith(
                     fontSize: 20.0,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 20.0,),
+                const SizedBox(
+                  height: 20.0,
+                ),
                 Image.asset(
                   status.imagePath,
                   width: MediaQuery.of(context).size.width / 2,
                 ),
-                const SizedBox(height: 20.0,),
+                const SizedBox(
+                  height: 20.0,
+                ),
                 Text(
                   status.label,
                   style: ts.copyWith(
@@ -52,7 +63,9 @@ class MainAppBar extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 8.0,),
+                const SizedBox(
+                  height: 8.0,
+                ),
                 Text(
                   status.comment,
                   style: ts.copyWith(
@@ -66,13 +79,5 @@ class MainAppBar extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String getTimeFromDateTime({required DateTime dateTime}) {
-    return '${dateTime.year}-${dateTime.month}-${dateTime.day} ${getTimeFormat(dateTime.hour)}:${getTimeFormat(dateTime.minute)}';
-  }
-
-  String getTimeFormat(int number){
-    return number.toString().padLeft(2, '0');
   }
 }

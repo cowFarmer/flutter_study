@@ -32,7 +32,7 @@ class StatusModel {
   final double minUltraFineDust;
 
   // 오존 최소치
-  final double min03;
+  final double minO3;
 
   // 이산화질소 최소치
   final double minNO2;
@@ -54,7 +54,7 @@ class StatusModel {
     required this.comment,
     required this.minFineDust,
     required this.minUltraFineDust,
-    required this.min03,
+    required this.minO3,
     required this.minNO2,
     required this.minCO,
     required this.minSO2,
