@@ -2,17 +2,21 @@ import 'package:air_pollution/model/stat_model.dart';
 import 'package:air_pollution/model/status_model.dart';
 import 'package:air_pollution/utils/data_utils.dart';
 import 'package:flutter/material.dart';
-import '../screen/const/colors.dart';
+import 'package:air_pollution/const/colors.dart';
 
 class MainAppBar extends StatelessWidget {
   final String region;
   final StatusModel status;
   final StatModel stat;
+  final DateTime dateTime;
+  final bool isExpanded;
 
   const MainAppBar({
     required this.region,
     required this.status,
     required this.stat,
+    required this.dateTime,
+    required this.isExpanded,
     Key? key,
   }) : super(key: key);
 
@@ -25,6 +29,12 @@ class MainAppBar extends StatelessWidget {
 
     return SliverAppBar(
       backgroundColor: status.primaryColor,
+      pinned: true,
+      title: isExpanded
+          ? null
+          : Text(
+              '${region} ${DataUtils.getTimeFromDateTime(dateTime: dateTime)}'),
+      centerTitle: true,
       expandedHeight: 500,
       flexibleSpace: FlexibleSpaceBar(
         background: SafeArea(

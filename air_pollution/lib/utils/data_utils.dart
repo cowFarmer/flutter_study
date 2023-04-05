@@ -1,6 +1,6 @@
 import 'package:air_pollution/model/stat_model.dart';
 import 'package:air_pollution/model/status_model.dart';
-import 'package:air_pollution/screen/const/status_level.dart';
+import 'package:air_pollution/const/status_level.dart';
 
 class DataUtils {
   static String getTimeFromDateTime({required DateTime dateTime}) {
@@ -26,7 +26,7 @@ class DataUtils {
     }
   }
 
-  static String itemCodeKrString({
+  static String getItemCodeKrString({
     required ItemCode itemCode,
   }) {
     switch (itemCode) {

@@ -1,5 +1,5 @@
 import 'package:air_pollution/model/stat_model.dart';
-import 'package:air_pollution/screen/const/data.dart';
+import 'package:air_pollution/const/data.dart';
 import 'package:dio/dio.dart';
 
 class StatRepository {
@@ -18,6 +18,7 @@ class StatRepository {
         'searchCondition': 'WEEK',
       },
     );
+
 
     return response.data['response']['body']['items']
         .map<StatModel>(
