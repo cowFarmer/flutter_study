@@ -1,3 +1,4 @@
+import 'package:air_pollution/model/stat_model.dart';
 import 'package:air_pollution/screen/home_screen.dart';
 import 'package:air_pollution/screen/test_screen.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,14 @@ const testBox = 'test';
 void main() async {
   await Hive.initFlutter();
 
+  Hive.registerAdapter<StatModel>(StatModelAdapter());
+  Hive.registerAdapter<ItemCode>(ItemCodeAdapter());
+
   await Hive.openBox(testBox);
+
+  for(ItemCode itemCode in ItemCode.values){
+    await Hive.openBox(itemCode.name);
+  }
 
   runApp(
     MaterialApp(
