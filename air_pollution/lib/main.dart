@@ -16,7 +16,7 @@ void main() async {
   await Hive.openBox(testBox);
 
   for(ItemCode itemCode in ItemCode.values){
-    await Hive.openBox(itemCode.name);
+    await Hive.openBox<StatModel>(itemCode.name);
   }
 
   runApp(
@@ -24,7 +24,7 @@ void main() async {
       theme: ThemeData(
         fontFamily: 'sunflower',
       ),
-      home: TestScreen(),
+      home: HomeScreen(),
       // HomeScreen(),
     )
   );
