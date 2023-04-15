@@ -1,6 +1,6 @@
 import 'package:air_pollution/component/card_title.dart';
-import 'package:air_pollution/component/category_card.dart';
-import 'package:air_pollution/component/hourly_card.dart';
+import 'package:air_pollution/container/category_card.dart';
+import 'package:air_pollution/container/hourly_card.dart';
 import 'package:air_pollution/component/main_app_bar.dart';
 import 'package:air_pollution/component/main_card.dart';
 import 'package:air_pollution/component/main_drawer.dart';
@@ -33,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     scrollController.addListener(scrollListener);
+    fetchData();
   }
 
   @override
@@ -42,45 +43,65 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<Map<ItemCode, List<StatModel>>> fetchData() async {
-    List<Future> futures = [];
+  Future<void> fetchData() async {
+    try {
+      final now = DateTime.now();
+      final fetchTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        now.hour,
+      );
 
-    for (ItemCode itemCode in ItemCode.values) {
-      futures.add(
-        StatRepository.fetchData(
-          itemCode: itemCode,
+      final box = Hive.box<StatModel>(ItemCode.PM10.name);
+      final recent = box.values.last as StatModel;
+
+      if (recent.dataTime.isAtSameMomentAs(fetchTime)) {
+        print('이미 최신 데이터가 있습니다.');
+        return;
+      }
+
+      List<Future> futures = [];
+
+      for (ItemCode itemCode in ItemCode.values) {
+        futures.add(
+          StatRepository.fetchData(
+            itemCode: itemCode,
+          ),
+        );
+      }
+
+      final results = await Future.wait(futures);
+
+      // Hive에 데이터 넣기
+      for (int i = 0; i < results.length; i++) {
+        // ItemCode
+        final key = ItemCode.values[i];
+        // List<StatModel>
+        final value = results[i];
+
+        final box = Hive.box<StatModel>(key.name);
+
+        for (StatModel stat in value) {
+          box.put(stat.dataTime.toString(), stat);
+        }
+
+        final allKeys = box.keys.toList();
+
+        if (allKeys.length > 24) {
+          // start - 시작 index, end - 끝 index
+          final deleteKeys = allKeys.sublist(0, allKeys.length - 24);
+
+          box.deleteAll(deleteKeys);
+        }
+      }
+    } on DioError catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('인터넷 연결이 원활하지 않습니다.'),
         ),
       );
     }
-
-    final results = await Future.wait(futures);
-
-    // Hive에 데이터 넣기
-    for (int i = 0; i < results.length; i++) {
-      // ItemCode
-      final key = ItemCode.values[i];
-      // List<StatModel>
-      final value = results[i];
-
-      final box = Hive.box<StatModel>(key.name);
-
-      for (StatModel stat in value) {
-        box.put(stat.dataTime.toString(), stat);
-      }
-    }
-
-    return ItemCode.values.fold<Map<ItemCode, List<StatModel>>>(
-      {},
-      (previousValue, itemCode) {
-        final box = Hive.box<StatModel>(itemCode.name);
-
-        previousValue.addAll({
-          itemCode: box.values.toList(),
-        });
-
-        return previousValue;
-      },
-    );
   }
 
   scrollListener() {
@@ -95,47 +116,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<ItemCode, List<StatModel>>>(
-      future: fetchData(),
-      builder: (context, snapshat) {
-        if (snapshat.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Text('에러가 있습니다.'),
-            ),
-          );
-        }
-
-        if (!snapshat.hasData) {
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        Map<ItemCode, List<StatModel>> stats = snapshat.data!;
-        StatModel pM10RecentStat = stats[ItemCode.PM10]![0];
+    return ValueListenableBuilder<Box>(
+      valueListenable: Hive.box<StatModel>(ItemCode.PM10.name).listenable(),
+      builder: (context, box, widget) {
+        // PM10 관련 box를 받고 있음
+        // box.value.toList().last
+        final recentStat = box.values.toList().last as StatModel;
 
         // 최근 미세먼지 데이터의 현재 상태
         final status = DataUtils.getStatusFromItemCodeAndValue(
-          value: pM10RecentStat.seoul,
+          value: recentStat.getLevelFromRegion(region),
           itemCode: ItemCode.PM10,
         );
-
-        final ssModel = stats.keys.map((key) {
-          final value = stats[key]!;
-          final stat = value[0];
-
-          return StatAndStatusModel(
-            itemCode: key,
-            status: DataUtils.getStatusFromItemCodeAndValue(
-              value: stat.getLevelFromRegion(region),
-              itemCode: key,
-            ),
-            stat: stat,
-          );
-        }).toList();
 
         return Scaffold(
           // hamberger bar
@@ -152,52 +144,51 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           body: Container(
             color: status.primaryColor,
-            child: CustomScrollView(
-              controller: scrollController,
-              slivers: [
-                MainAppBar(
-                  region: region,
-                  stat: pM10RecentStat,
-                  status: status,
-                  dateTime: pM10RecentStat.dataTime,
-                  isExpanded: isExpanded,
-                ),
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      CategoryCard(
-                        region: region,
-                        models: ssModel,
-                        darkColor: status.darkColor,
-                        lightColor: status.lightColor,
-                      ),
-                      const SizedBox(height: 16.0),
-                      ...stats.keys.map(
-                        (itemCode) {
-                          final stat = stats[itemCode]!;
-
-                          return Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 16.0,
-                            ),
-                            child: HourlyCard(
-                              darkColor: status.darkColor,
-                              lightColor: status.lightColor,
-                              category: DataUtils.getItemCodeKrString(
-                                itemCode: itemCode,
-                              ),
-                              stats: stat,
-                              region: region,
-                            ),
-                          );
-                        },
-                      ).toList(),
-                      const SizedBox(height: 16.0),
-                    ],
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await fetchData();
+              },
+              child: CustomScrollView(
+                controller: scrollController,
+                slivers: [
+                  MainAppBar(
+                    region: region,
+                    stat: recentStat,
+                    status: status,
+                    dateTime: recentStat.dataTime,
+                    isExpanded: isExpanded,
                   ),
-                ),
-              ],
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        CategoryCard(
+                          region: region,
+                          darkColor: status.darkColor,
+                          lightColor: status.lightColor,
+                        ),
+                        const SizedBox(height: 16.0),
+                        ...ItemCode.values.map(
+                          (itemCode) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 16.0,
+                              ),
+                              child: HourlyCard(
+                                darkColor: status.darkColor,
+                                lightColor: status.lightColor,
+                                itemCode: itemCode,
+                                region: region,
+                              ),
+                            );
+                          },
+                        ).toList(),
+                        const SizedBox(height: 16.0),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
